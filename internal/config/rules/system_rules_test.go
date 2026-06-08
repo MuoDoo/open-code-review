@@ -78,7 +78,7 @@ func TestResolve_DefaultRules(t *testing.T) {
 		{"entry/oh-package.json5", "json-key"},
 		{"src/lib.rs", "Ownership and Lifetime Correctness"},
 		{"crates/service/src/main.rs", "Unsafe Code Boundaries"},
-		{"crates/service/cargo.toml", "Cargo Manifest Hygiene"},
+		{"crates/service/Cargo.toml", "Cargo Manifest Hygiene"},
 	}
 
 	for _, tt := range tests {
@@ -153,24 +153,33 @@ func TestResolve_CustomRule_DefaultFallback(t *testing.T) {
 	}
 }
 
-func TestResolve_CaseSensitivity(t *testing.T) {
+func TestResolve_CaseInsensitive(t *testing.T) {
 	rule := &SystemRule{
 		DefaultRule: "default",
 		PathRules: []PathRule{
 			{Pattern: "**/*.java", Rule: "java-rule"},
+			{Pattern: "**/Cargo.toml", Rule: "cargo-rule"},
 		},
 	}
 
-	// agent.go calls strings.ToLower(newPath) before Resolve,
-	// so uppercase extensions should NOT match if not lowercased.
 	got := rule.Resolve("Foo.Java")
-	if got != "default" {
-		t.Errorf("expected default for uppercase extension, got %q", got)
+	if got != "java-rule" {
+		t.Errorf("expected java-rule for uppercase extension, got %q", got)
 	}
 
 	got = rule.Resolve("foo.java")
 	if got != "java-rule" {
 		t.Errorf("expected java-rule for lowercase, got %q", got)
+	}
+
+	got = rule.Resolve("crates/service/Cargo.toml")
+	if got != "cargo-rule" {
+		t.Errorf("expected cargo-rule for canonical Cargo.toml, got %q", got)
+	}
+
+	got = rule.Resolve("crates/service/cargo.toml")
+	if got != "cargo-rule" {
+		t.Errorf("expected cargo-rule for lowercased cargo.toml, got %q", got)
 	}
 }
 
