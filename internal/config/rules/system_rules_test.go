@@ -76,6 +76,9 @@ func TestResolve_DefaultRules(t *testing.T) {
 		{"components/Button.ets", "State Decorator"},
 		{"entry/src/main/module.json5", "json-key"},
 		{"entry/oh-package.json5", "json-key"},
+		{"src/lib.rs", "Ownership and Lifetime Correctness"},
+		{"crates/service/src/main.rs", "Unsafe Code Boundaries"},
+		{"crates/service/cargo.toml", "Cargo Manifest Hygiene"},
 	}
 
 	for _, tt := range tests {
@@ -99,7 +102,6 @@ func TestResolve_FallbackToDefault(t *testing.T) {
 		"readme.md",
 		"docs/architecture.txt",
 		"Makefile",
-		"src/unknown.rs",
 		"internal/agent/agent.go",
 		"scripts/deploy.py",
 		"ios/ViewController.m",
