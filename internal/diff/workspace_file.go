@@ -4,24 +4,21 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
+
+	"github.com/open-code-review/open-code-review/internal/pathutil"
 )
 
 func readWorkspaceFileForDiff(repoDir, relPath string) ([]byte, error) {
-	repoRoot, err := filepath.Abs(repoDir)
-	if err != nil {
-		return nil, fmt.Errorf("resolve repository path %q: %w", repoDir, err)
-	}
-	repoRoot, err = filepath.EvalSymlinks(repoRoot)
+	repoRoot, err := pathutil.CanonicalPath(repoDir)
 	if err != nil {
 		return nil, fmt.Errorf("resolve repository path %q: %w", repoDir, err)
 	}
 	if filepath.IsAbs(relPath) {
-		return nil, fmt.Errorf("file path %q is outside repository", relPath)
+		return nil, fmt.Errorf("file path %q must be relative, not absolute", relPath)
 	}
 
 	fullPath := filepath.Join(repoRoot, relPath)
-	if !pathWithinBase(repoRoot, fullPath) {
+	if !pathutil.WithinBase(repoRoot, fullPath) {
 		return nil, fmt.Errorf("file path %q is outside repository", relPath)
 	}
 
@@ -29,7 +26,7 @@ func readWorkspaceFileForDiff(repoDir, relPath string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("resolve parent path for %q: %w", relPath, err)
 	}
-	if !pathWithinBase(repoRoot, parent) {
+	if !pathutil.WithinBase(repoRoot, parent) {
 		return nil, fmt.Errorf("file path %q is outside repository", relPath)
 	}
 
@@ -52,7 +49,7 @@ func readWorkspaceFileForDiff(repoDir, relPath string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("resolve file %q: %w", relPath, err)
 	}
-	if !pathWithinBase(repoRoot, resolvedPath) {
+	if !pathutil.WithinBase(repoRoot, resolvedPath) {
 		return nil, fmt.Errorf("file path %q is outside repository", relPath)
 	}
 	content, err := os.ReadFile(resolvedPath)
@@ -60,12 +57,4 @@ func readWorkspaceFileForDiff(repoDir, relPath string) ([]byte, error) {
 		return nil, fmt.Errorf("read file %q: %w", relPath, err)
 	}
 	return content, nil
-}
-
-func pathWithinBase(base, target string) bool {
-	rel, err := filepath.Rel(base, target)
-	if err != nil {
-		return false
-	}
-	return rel == "." || (rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator)))
 }
